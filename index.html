@@ -4,7 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Coming Soon</title>
+    <title>The Build Foundry</title>
+    <link rel="icon" type="image/png" href="favicon.png">
     <style>
         :root {
             --orange: #FF6B00;
@@ -43,14 +44,24 @@
             z-index: 1;
             text-align: center;
             pointer-events: none;
-            /* Allows clicks to pass through to the canvas */
+            padding: 0 20px;
+            /* Prevents text hitting screen edges */
         }
 
         h1 {
-            font-size: clamp(2rem, 8vw, 3.5rem);
+            font-size: clamp(1.8rem, 8vw, 3.5rem);
             font-weight: 300;
             letter-spacing: -1px;
             margin: 0;
+            line-height: 1.2;
+        }
+
+        .credit {
+            font-size: 1rem;
+            color: var(--gray-hint);
+            margin-top: 15px;
+            letter-spacing: 1px;
+            font-weight: 400;
         }
 
         .highlight {
@@ -58,15 +69,59 @@
             font-weight: 700;
         }
 
-        .hint {
+        .footer {
             position: absolute;
             bottom: 40px;
-            font-size: 0.75rem;
+            z-index: 2;
+            text-align: center;
+            width: 100%;
+            pointer-events: all;
+        }
+
+        .contact-link {
+            color: var(--gray-dark);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: color 0.3s ease;
+            display: inline-block;
+            padding: 10px;
+            /* Larger hit area for thumbs */
+        }
+
+        .contact-link:hover {
+            color: var(--orange);
+        }
+
+        .hint {
+            margin-top: 10px;
+            font-size: 0.65rem;
             color: var(--gray-hint);
             letter-spacing: 2px;
             text-transform: uppercase;
             animation: breathe 3s infinite ease-in-out;
             pointer-events: none;
+        }
+
+        /* --- MOBILE ADJUSTMENTS --- */
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.8rem;
+                letter-spacing: -0.5px;
+            }
+
+            .credit {
+                font-size: 0.85rem;
+                margin-top: 8px;
+            }
+
+            .footer {
+                bottom: 30px;
+            }
+
+            .contact-link {
+                font-size: 0.8rem;
+            }
         }
 
         @keyframes breathe {
@@ -84,14 +139,17 @@
 </head>
 
 <body>
-
     <canvas id="canvas"></canvas>
 
     <div class="content">
         <h1>Something <span class="highlight">amazing</span> is under construction.</h1>
+        <div class="credit">by Vishesh Chhabra</div>
     </div>
 
-    <div class="hint">Interact with the space</div>
+    <div class="footer">
+        <a href="mailto:info@thebuildfoundry.com" class="contact-link">info@thebuildfoundry.com</a>
+        <div class="hint">Interact with the space</div>
+    </div>
 
     <script>
         const canvas = document.getElementById('canvas');
@@ -101,6 +159,8 @@
         function initCanvas() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
+            // Clear and restart particles on resize to avoid weird stretching
+            createInitialParticles();
         }
 
         class Particle {
@@ -108,8 +168,9 @@
                 this.x = x || Math.random() * canvas.width;
                 this.y = y || Math.random() * canvas.height;
                 this.size = Math.random() * 2 + 1;
-                this.speedX = isBurst ? (Math.random() - 0.5) * 6 : (Math.random() - 0.5) * 1;
-                this.speedY = isBurst ? (Math.random() - 0.5) * 6 : (Math.random() - 0.5) * 1;
+                // Faster bursts for mobile tactile feel
+                this.speedX = isBurst ? (Math.random() - 0.5) * 8 : (Math.random() - 0.5) * 1.5;
+                this.speedY = isBurst ? (Math.random() - 0.5) * 8 : (Math.random() - 0.5) * 1.5;
                 this.color = Math.random() > 0.3 ? '#FF6B00' : '#DDDDDD';
                 this.life = 100;
                 this.isBurst = isBurst;
@@ -117,7 +178,7 @@
             update() {
                 this.x += this.speedX;
                 this.y += this.speedY;
-                if (this.isBurst) this.life -= 1.5;
+                if (this.isBurst) this.life -= 2;
 
                 if (this.x > canvas.width || this.x < 0) this.speedX *= -1;
                 if (this.y > canvas.height || this.y < 0) this.speedY *= -1;
@@ -132,17 +193,24 @@
         }
 
         function createInitialParticles() {
-            for (let i = 0; i < 60; i++) {
+            particles = [];
+            const count = window.innerWidth < 600 ? 40 : 80; // Fewer particles on mobile for performance
+            for (let i = 0; i < count; i++) {
                 particles.push(new Particle());
             }
         }
 
         function handleInteract(e) {
-            const x = e.clientX || e.touches[0].clientX;
-            const y = e.clientY || e.touches[0].clientY;
-            // Add burst particles on click/tap
-            for (let i = 0; i < 15; i++) {
-                particles.push(new Particle(x, y, true));
+            if (e.target.tagName === 'A') return;
+
+            // Fix for multi-touch or mouse
+            const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+            const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+
+            if (clientX && clientY) {
+                for (let i = 0; i < 10; i++) {
+                    particles.push(new Particle(clientX, clientY, true));
+                }
             }
         }
 
@@ -158,10 +226,13 @@
 
         window.addEventListener('resize', initCanvas);
         window.addEventListener('mousedown', handleInteract);
-        window.addEventListener('touchstart', (e) => handleInteract(e.touches[0]));
+        window.addEventListener('touchstart', (e) => {
+            handleInteract(e);
+            // Prevent scrolling behavior while interacting with the fidget
+            if (e.target.tagName !== 'A') e.preventDefault();
+        }, { passive: false });
 
         initCanvas();
-        createInitialParticles();
         animate();
     </script>
 </body>
