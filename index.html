@@ -8,20 +8,6 @@
     <meta name="title" content="The Build Foundry | Premium Custom PC Building">
     <meta name="description"
         content="Something amazing is under construction. Custom high-end PC builds by Vishesh Chhabra.">
-
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://thebuildfoundry.com/">
-    <meta property="og:title" content="The Build Foundry">
-    <meta property="og:description"
-        content="Premium custom PC builds by Vishesh Chhabra. Something amazing is under construction.">
-    <meta property="og:image" content="https://thebuildfoundry.com/og-image.png">
-
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://thebuildfoundry.com/">
-    <meta property="twitter:title" content="The Build Foundry">
-    <meta property="twitter:description"
-        content="Premium custom PC builds by Vishesh Chhabra. Something amazing is under construction.">
-    <meta property="twitter:image" content="https://thebuildfoundry.com/og-image.png">
     <link rel="icon" type="image/png" href="favicon.png">
     <style>
         :root {
@@ -62,6 +48,13 @@
             text-align: center;
             pointer-events: none;
             padding: 0 20px;
+            width: 100%;
+            max-width: 600px;
+            /* Prevents the footer from jumping when content loads */
+            min-height: 250px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
 
         h1 {
@@ -72,17 +65,61 @@
             line-height: 1.2;
         }
 
-        .credit {
-            font-size: 1rem;
-            color: var(--gray-hint);
-            margin-top: 15px;
-            letter-spacing: 1px;
-            font-weight: 400;
-        }
-
         .highlight {
             color: var(--orange);
             font-weight: 700;
+        }
+
+        /* --- LOADING BAR STYLES --- */
+        /* --- STABILIZED LOADING BAR STYLES --- */
+        .progress-container {
+            margin-top: 40px;
+            width: 100%;
+            background: var(--gray-light);
+            height: 4px;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: var(--orange);
+            width: 0%;
+            transition: width 2.5s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 15px rgba(255, 107, 0, 0.3);
+        }
+
+        .progress-status-container {
+            margin-top: 15px;
+            height: 20px;
+            /* Fixed height prevents layout shifting */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .progress-text {
+            font-size: 0.85rem;
+            font-weight: 200;
+            color: var(--orange);
+            letter-spacing: 1px;
+            /* text-transform: uppercase; */
+            font-variant-numeric: tabular-nums;
+            /* Keeps numbers steady */
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+        }
+
+        .progress-text.visible {
+            opacity: 1;
+        }
+
+        .credit {
+            font-size: 1rem;
+            color: var(--gray-hint);
+            margin-top: 10px;
+            letter-spacing: 1px;
         }
 
         .footer {
@@ -144,21 +181,6 @@
         @media (max-width: 600px) {
             h1 {
                 font-size: 1.8rem;
-                letter-spacing: -0.5px;
-            }
-
-            .credit {
-                font-size: 0.85rem;
-                margin-top: 8px;
-            }
-
-            .footer {
-                bottom: 30px;
-            }
-
-            .contact-link,
-            .insta-link {
-                font-size: 0.8rem;
             }
 
             .social-links {
@@ -187,6 +209,13 @@
     <div class="content">
         <h1>Something <span class="highlight">amazing</span> is under construction.</h1>
         <div class="credit">by Vishesh Chhabra</div>
+
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <div class="progress-status-container">
+            <div class="progress-text" id="progressText">Initiating Forge...</div>
+        </div>
     </div>
 
     <div class="footer">
@@ -204,6 +233,48 @@
     </div>
 
     <script>
+        function getBuildStep(progress) {
+            const steps = [
+                { threshold: 0, text: "Sourcing high-end components" },
+                { threshold: 10, text: "Unboxing the chassis" },
+                { threshold: 20, text: "Mounting the motherboard" },
+                { threshold: 30, text: "Seating the CPU" },
+                { threshold: 40, text: "Applying thermal paste" },
+                { threshold: 50, text: "Installing memory modules" },
+                { threshold: 60, text: "Routing power cables" },
+                { threshold: 70, text: "Mounting the RTX 4080" },
+                { threshold: 80, text: "Optimizing airflow & cooling" },
+                { threshold: 90, text: "Final BIOS tuning" },
+                { threshold: 98, text: "Polishing the tempered glass" }
+            ];
+            const currentStep = [...steps].reverse().find(step => progress >= step.threshold);
+            return currentStep ? currentStep.text : "Initiating Forge";
+        }
+
+        function updateProgressBar() {
+            const now = new Date();
+            const totalDays = 21;
+            const launchDate = new Date("2026-02-05T00:00:00");
+
+            const diffInDays = (now - launchDate) / (1000 * 60 * 60 * 24);
+            const progress = Math.min(Math.max((diffInDays / totalDays) * 100, 0), 100);
+            const displayProgress = progress.toFixed(0);
+
+            const bar = document.getElementById('progressBar');
+            const textElement = document.getElementById('progressText');
+
+            // 1. Start the bar animation
+            setTimeout(() => {
+                bar.style.width = displayProgress + "%";
+            }, 100);
+
+            // 2. Smoothly fade in the text after a short delay
+            setTimeout(() => {
+                textElement.innerText = `${getBuildStep(displayProgress)}: ${displayProgress}%`;
+                textElement.classList.add('visible');
+            }, 800);
+        }
+
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         let particles = [];
@@ -226,8 +297,7 @@
                 this.isBurst = isBurst;
             }
             update() {
-                this.x += this.speedX;
-                this.y += this.speedY;
+                this.x += this.speedX; this.y += this.speedY;
                 if (this.isBurst) this.life -= 2;
                 if (this.x > canvas.width || this.x < 0) this.speedX *= -1;
                 if (this.y > canvas.height || this.y < 0) this.speedY *= -1;
@@ -244,9 +314,7 @@
         function createInitialParticles() {
             particles = [];
             const count = window.innerWidth < 600 ? 40 : 80;
-            for (let i = 0; i < count; i++) {
-                particles.push(new Particle());
-            }
+            for (let i = 0; i < count; i++) particles.push(new Particle());
         }
 
         function handleInteract(e) {
@@ -254,9 +322,7 @@
             const clientX = e.clientX || (e.touches && e.touches[0].clientX);
             const clientY = e.clientY || (e.touches && e.touches[0].clientY);
             if (clientX && clientY) {
-                for (let i = 0; i < 10; i++) {
-                    particles.push(new Particle(clientX, clientY, true));
-                }
+                for (let i = 0; i < 10; i++) particles.push(new Particle(clientX, clientY, true));
             }
         }
 
@@ -276,6 +342,7 @@
 
         initCanvas();
         animate();
+        updateProgressBar();
     </script>
 </body>
 
